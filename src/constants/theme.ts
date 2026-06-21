@@ -1,6 +1,7 @@
 export const Colors = {
   background: "#0B1628",
   surface: "#152238",
+  surfaceSelected: "#182947",
   surfaceElevated: "rgba(21, 34, 56, 0.92)",
   overlay: "rgba(11, 22, 40, 0.75)",
   text: "#FFFFFF",

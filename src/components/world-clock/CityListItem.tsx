@@ -60,10 +60,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     gap: Spacing.md,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface,
   },
   rowSelected: {
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
+    backgroundColor: Colors.surfaceSelected,
   },
   details: {
     flex: 1,

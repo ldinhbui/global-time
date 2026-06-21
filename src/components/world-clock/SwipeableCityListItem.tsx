@@ -1,10 +1,10 @@
+import { SymbolView } from "expo-symbols";
 import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
-import { SymbolView } from "expo-symbols";
 
-import { Colors, Spacing } from "@/constants/theme";
 import { City } from "@/constants/cities";
+import { Colors, Spacing } from "@/constants/theme";
 
 import { CityListItem } from "./CityListItem";
 
@@ -90,7 +90,11 @@ export function SwipeableCityListItem({
       <Pressable
         accessibilityLabel="Remove city"
         onPress={handleRemove}
-        style={[styles.action, styles.removeAction, !canRemove && styles.actionDisabled]}
+        style={[
+          styles.action,
+          styles.removeAction,
+          !canRemove && styles.actionDisabled,
+        ]}
       >
         <SymbolView
           name={{
@@ -117,19 +121,32 @@ export function SwipeableCityListItem({
       renderRightActions={renderRightActions}
       rightThreshold={ACTION_WIDTH / 2}
     >
-      <CityListItem
-        city={city}
-        now={now}
-        onPress={onPress}
-        pinned={pinned}
-        selected={selected}
-        variant={variant}
-      />
+      <View
+        style={[
+          styles.foreground,
+          selected && styles.foregroundSelected,
+        ]}
+      >
+        <CityListItem
+          city={city}
+          now={now}
+          onPress={onPress}
+          pinned={pinned}
+          selected={selected}
+          variant={variant}
+        />
+      </View>
     </Swipeable>
   );
 }
 
 const styles = StyleSheet.create({
+  foreground: {
+    backgroundColor: Colors.surface,
+  },
+  foregroundSelected: {
+    backgroundColor: Colors.surfaceSelected,
+  },
   actionContainer: {
     width: ACTION_WIDTH,
     height: "100%",
