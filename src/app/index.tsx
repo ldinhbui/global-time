@@ -9,18 +9,23 @@ import { Header } from "@/components/world-clock/Header";
 import { CURRENT_LOCATION_ID, City } from "@/constants/cities";
 import { Colors } from "@/constants/theme";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import { usePersistedCityList } from "@/hooks/use-persisted-city-list";
 import { getCurrentLocationCity, LocationError } from "@/utils/location";
 
 export default function WorldClockScreen() {
   const now = useCurrentTime();
-  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
-  const [currentLocationCity, setCurrentLocationCity] = useState<City | null>(
-    null,
-  );
+  const {
+    addedCities,
+    setAddedCities,
+    pinnedCityId,
+    setPinnedCityId,
+    selectedCityId,
+    setSelectedCityId,
+    currentLocationCity,
+    setCurrentLocationCity,
+  } = usePersistedCityList();
   const [isLocating, setIsLocating] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [addedCities, setAddedCities] = useState<City[]>([]);
-  const [pinnedCityId, setPinnedCityId] = useState<string | null>(null);
 
   const displayedCities = useMemo(() => {
     const cities: City[] = [];
