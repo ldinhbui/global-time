@@ -20,7 +20,7 @@ export default function WorldClockScreen() {
   const [isLocating, setIsLocating] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [addedCities, setAddedCities] = useState<City[]>([]);
-  const [pinnedCityIds, setPinnedCityIds] = useState<string[]>([]);
+  const [pinnedCityId, setPinnedCityId] = useState<string | null>(null);
   const [removedCityIds, setRemovedCityIds] = useState<string[]>([]);
 
   const displayedCities = useMemo(() => {
@@ -67,12 +67,7 @@ export default function WorldClockScreen() {
   );
 
   const handlePinCity = useCallback((city: City) => {
-    setPinnedCityIds((current) => {
-      if (current.includes(city.id)) {
-        return current.filter((id) => id !== city.id);
-      }
-      return [city.id, ...current.filter((id) => id !== city.id)];
-    });
+    setPinnedCityId((current) => (current === city.id ? null : city.id));
     setSelectedCityId(city.id);
   }, []);
 
@@ -89,7 +84,7 @@ export default function WorldClockScreen() {
       setRemovedCityIds((current) =>
         current.includes(city.id) ? current : [...current, city.id],
       );
-      setPinnedCityIds((current) => current.filter((id) => id !== city.id));
+      setPinnedCityId((current) => (current === city.id ? null : current));
 
       if (selectedCityId === city.id) {
         const remaining = displayedCities.filter((item) => item.id !== city.id);
@@ -179,7 +174,7 @@ export default function WorldClockScreen() {
           onPinCity={handlePinCity}
           onRemoveCity={handleRemoveCity}
           onSelectCity={selectCity}
-          pinnedCityIds={pinnedCityIds}
+          pinnedCityId={pinnedCityId}
           selectedCityId={selectedCityId}
         />
 

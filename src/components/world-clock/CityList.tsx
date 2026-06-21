@@ -11,7 +11,7 @@ type CityListProps = {
   cities: City[];
   now: Date;
   selectedCityId: string;
-  pinnedCityIds: string[];
+  pinnedCityId: string | null;
   canRemoveCity: (city: City) => boolean;
   onSelectCity: (city: City) => void;
   onPinCity: (city: City) => void;
@@ -21,15 +21,15 @@ type CityListProps = {
 function orderCities(
   cities: City[],
   selectedCityId: string,
-  pinnedCityIds: string[],
+  pinnedCityId: string | null,
 ) {
-  const pinned = pinnedCityIds
-    .map((id) => cities.find((city) => city.id === id))
-    .filter((city): city is City => city !== undefined);
+  const pinned = pinnedCityId
+    ? cities.filter((city) => city.id === pinnedCityId)
+    : [];
 
-  const unpinned = cities.filter((city) => !pinnedCityIds.includes(city.id));
+  const unpinned = cities.filter((city) => city.id !== pinnedCityId);
 
-  if (!pinnedCityIds.includes(selectedCityId)) {
+  if (pinnedCityId !== selectedCityId) {
     const selectedIndex = unpinned.findIndex((city) => city.id === selectedCityId);
     if (selectedIndex > 0) {
       const selected = unpinned[selectedIndex];
@@ -48,15 +48,15 @@ export function CityList({
   cities,
   now,
   selectedCityId,
-  pinnedCityIds,
+  pinnedCityId,
   canRemoveCity,
   onSelectCity,
   onPinCity,
   onRemoveCity,
 }: CityListProps) {
   const orderedCities = useMemo(
-    () => orderCities(cities, selectedCityId, pinnedCityIds),
-    [cities, selectedCityId, pinnedCityIds],
+    () => orderCities(cities, selectedCityId, pinnedCityId),
+    [cities, selectedCityId, pinnedCityId],
   );
 
   return (
@@ -74,7 +74,7 @@ export function CityList({
             onPin={() => onPinCity(item)}
             onPress={() => onSelectCity(item)}
             onRemove={() => onRemoveCity(item)}
-            pinned={pinnedCityIds.includes(item.id)}
+            pinned={item.id === pinnedCityId}
             selected={item.id === selectedCityId}
             variant={item.id === "london" ? "light" : "dark"}
           />
