@@ -7,7 +7,7 @@ import { formatDate, formatTime } from "@/utils/time";
 const GLOBE_SIZE = 280;
 
 type GlobeSectionProps = {
-  city: City;
+  city: City | null;
   now: Date;
   isLocating?: boolean;
   onPrevious: () => void;
@@ -52,16 +52,19 @@ export function GlobeSection({
   onNext,
   onCenterLocation,
 }: GlobeSectionProps) {
-  const pin = getPinPosition(city.latitude, city.longitude, GLOBE_SIZE);
+  const pin = city
+    ? getPinPosition(city.latitude, city.longitude, GLOBE_SIZE)
+    : null;
 
   return (
     <View style={styles.container}>
       <View style={styles.globeRow}>
         <Pressable
           accessibilityLabel="Previous city"
+          disabled={!city}
           hitSlop={16}
           onPress={onPrevious}
-          style={styles.arrowButton}
+          style={[styles.arrowButton, !city && styles.arrowButtonDisabled]}
         >
           <Text style={styles.arrow}>‹</Text>
         </Pressable>
@@ -69,31 +72,49 @@ export function GlobeSection({
         <View style={styles.globeWrapper}>
           <GlobeVisual size={GLOBE_SIZE} />
 
-          <View
-            style={[
-              styles.pinContainer,
-              { left: pin.x - 12, top: pin.y - 28 },
-            ]}
-          >
-            <View style={styles.pinHead} />
-            <View style={styles.pinStem} />
-            <View style={styles.pinShadow} />
-          </View>
+          {pin ? (
+            <View
+              style={[
+                styles.pinContainer,
+                { left: pin.x - 12, top: pin.y - 28 },
+              ]}
+            >
+              <View style={styles.pinHead} />
+              <View style={styles.pinStem} />
+              <View style={styles.pinShadow} />
+            </View>
+          ) : null}
 
           <View style={styles.overlayCard}>
-            <Text style={styles.overlayCity}>
-              {city.name}, {city.country}
-            </Text>
-            <Text style={styles.overlayTime}>{formatTime(now, city.timezone)}</Text>
-            <Text style={styles.overlayDate}>{formatDate(now, city.timezone)}</Text>
+            {city ? (
+              <>
+                <Text style={styles.overlayCity}>
+                  {city.name}, {city.country}
+                </Text>
+                <Text style={styles.overlayTime}>
+                  {formatTime(now, city.timezone)}
+                </Text>
+                <Text style={styles.overlayDate}>
+                  {formatDate(now, city.timezone)}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.overlayCity}>No city selected</Text>
+                <Text style={styles.overlayHint}>
+                  Search or use your location to get started
+                </Text>
+              </>
+            )}
           </View>
         </View>
 
         <Pressable
           accessibilityLabel="Next city"
+          disabled={!city}
           hitSlop={16}
           onPress={onNext}
-          style={styles.arrowButton}
+          style={[styles.arrowButton, !city && styles.arrowButtonDisabled]}
         >
           <Text style={styles.arrow}>›</Text>
         </Pressable>
@@ -141,6 +162,9 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+  },
+  arrowButtonDisabled: {
+    opacity: 0.35,
   },
   arrow: {
     color: Colors.textSecondary,
@@ -263,6 +287,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 13,
     marginTop: 4,
+  },
+  overlayHint: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: "center",
   },
   locationButton: {
     alignItems: "center",
