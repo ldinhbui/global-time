@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -10,9 +11,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { City, WORLD_CITIES } from "@/constants/cities";
+import { City } from "@/constants/cities";
 import { Colors, Spacing } from "@/constants/theme";
-import { searchCities } from "@/utils/search-cities";
+import {
+  GeocodingError,
+  MIN_QUERY_LENGTH,
+  searchCities,
+} from "@/utils/geocoding";
 import { formatTime, getTimezoneLabel } from "@/utils/time";
 
 type CitySearchModalProps = {
@@ -22,6 +27,15 @@ type CitySearchModalProps = {
   onSelectCity: (city: City) => void;
 };
 
+function getEmptyMessage(query: string, isSearching: boolean, error: string | null) {
+  if (error) return error;
+  if (isSearching) return null;
+  if (query.trim().length < MIN_QUERY_LENGTH) {
+    return `Type at least ${MIN_QUERY_LENGTH} characters to search any city.`;
+  }
+  return "No cities found. Try a different spelling.";
+}
+
 export function CitySearchModal({
   visible,
   now,
@@ -30,17 +44,66 @@ export function CitySearchModal({
 }: CitySearchModalProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<City[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) {
       setQuery("");
+      setResults([]);
+      setError(null);
+      setIsSearching(false);
     }
   }, [visible]);
 
-  const results = useMemo(
-    () => searchCities(query, WORLD_CITIES),
-    [query],
-  );
+  useEffect(() => {
+    if (!visible) return;
+
+    const trimmed = query.trim();
+    if (trimmed.length < MIN_QUERY_LENGTH) {
+      setResults([]);
+      setError(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+
+    let isCancelled = false;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const cities = await searchCities(trimmed);
+        if (!isCancelled) {
+          setResults(cities);
+          setError(null);
+        }
+      } catch (searchError) {
+        if (!isCancelled) {
+          setResults([]);
+          setError(
+            searchError instanceof GeocodingError
+              ? searchError.message
+              : "City search failed. Please try again.",
+          );
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsSearching(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [query, visible]);
+
+  const emptyMessage = getEmptyMessage(query, isSearching, error);
+  const showEmptyState = !isSearching && results.length === 0 && emptyMessage;
 
   return (
     <Modal
@@ -73,12 +136,15 @@ export function CitySearchModal({
             autoFocus
             clearButtonMode="while-editing"
             onChangeText={setQuery}
-            placeholder="City or country"
+            placeholder="Search any city"
             placeholderTextColor={Colors.textSecondary}
             returnKeyType="search"
             style={styles.input}
             value={query}
           />
+          {isSearching ? (
+            <ActivityIndicator color={Colors.accent} size="small" />
+          ) : null}
         </View>
 
         <FlatList
@@ -87,7 +153,16 @@ export function CitySearchModal({
           keyboardShouldPersistTaps="handled"
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No cities match your search.</Text>
+            showEmptyState ? (
+              <Text
+                style={[
+                  styles.emptyText,
+                  error ? styles.errorText : null,
+                ]}
+              >
+                {emptyMessage}
+              </Text>
+            ) : null
           }
           renderItem={({ item }) => (
             <Pressable
@@ -102,7 +177,9 @@ export function CitySearchModal({
                   {item.name}, {item.country}
                 </Text>
                 <Text style={styles.resultTimezone}>
-                  {getTimezoneLabel(now, item.timezone)}
+                  {item.region
+                    ? `${item.region} · ${getTimezoneLabel(now, item.timezone)}`
+                    : getTimezoneLabel(now, item.timezone)}
                 </Text>
               </View>
               <Text style={styles.resultTime}>{formatTime(now, item.timezone)}</Text>
@@ -227,5 +304,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: Spacing.xl,
     paddingHorizontal: Spacing.lg,
+  },
+  errorText: {
+    color: "#F87171",
   },
 });
