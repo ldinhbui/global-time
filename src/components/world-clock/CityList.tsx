@@ -1,4 +1,6 @@
-import { FlatList, StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 
 import { City } from "@/constants/cities";
 import { Colors, Spacing } from "@/constants/theme";
@@ -12,13 +14,33 @@ type CityListProps = {
   onSelectCity: (city: City) => void;
 };
 
-export function CityList({ cities, now, selectedCityId, onSelectCity }: CityListProps) {
+function orderCitiesWithSelectedFirst(cities: City[], selectedCityId: string) {
+  const selectedIndex = cities.findIndex((city) => city.id === selectedCityId);
+  if (selectedIndex <= 0) return cities;
+
+  const selected = cities[selectedIndex];
+  return [selected, ...cities.filter((city) => city.id !== selectedCityId)];
+}
+
+export function CityList({
+  cities,
+  now,
+  selectedCityId,
+  onSelectCity,
+}: CityListProps) {
+  const orderedCities = useMemo(
+    () => orderCitiesWithSelectedFirst(cities, selectedCityId),
+    [cities, selectedCityId],
+  );
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={cities}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+      {orderedCities.map((item, index) => (
+        <Animated.View
+          key={item.id}
+          layout={LinearTransition.springify().damping(500).stiffness(500)}
+        >
+          {index > 0 ? <View style={styles.separator} /> : null}
           <CityListItem
             city={item}
             now={now}
@@ -26,10 +48,8 @@ export function CityList({ cities, now, selectedCityId, onSelectCity }: CityList
             selected={item.id === selectedCityId}
             variant={item.id === "london" ? "light" : "dark"}
           />
-        )}
-        scrollEnabled={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        </Animated.View>
+      ))}
     </View>
   );
 }
