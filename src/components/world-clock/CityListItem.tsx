@@ -10,6 +10,7 @@ type CityListItemProps = {
   city: City;
   now: Date;
   selected?: boolean;
+  pinned?: boolean;
   onPress?: () => void;
   variant?: "dark" | "light";
 };
@@ -18,6 +19,7 @@ export function CityListItem({
   city,
   now,
   selected = false,
+  pinned = false,
   onPress,
   variant = "dark",
 }: CityListItemProps) {
@@ -35,9 +37,12 @@ export function CityListItem({
       />
 
       <View style={styles.details}>
-        <Text style={styles.cityName}>
-          {city.name}, {city.country}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.cityName}>
+            {city.name}, {city.country}
+          </Text>
+          {pinned ? <Text style={styles.pinBadge}>Pinned</Text> : null}
+        </View>
         <Text style={styles.timezone}>{getTimezoneLabel(now, city.timezone)}</Text>
       </View>
 
@@ -55,6 +60,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     gap: Spacing.md,
+    backgroundColor: Colors.surfaceElevated,
   },
   rowSelected: {
     backgroundColor: "rgba(59, 130, 246, 0.08)",
@@ -63,10 +69,23 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flexWrap: "wrap",
+  },
   cityName: {
     color: Colors.text,
     fontSize: 15,
     fontWeight: "600",
+  },
+  pinBadge: {
+    color: Colors.accent,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   timezone: {
     color: Colors.textSecondary,

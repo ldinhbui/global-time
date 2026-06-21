@@ -20,13 +20,15 @@ export default function WorldClockScreen() {
   const [isLocating, setIsLocating] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [addedCities, setAddedCities] = useState<City[]>([]);
+  const [pinnedCityIds, setPinnedCityIds] = useState<string[]>([]);
+  const [removedCityIds, setRemovedCityIds] = useState<string[]>([]);
 
   const displayedCities = useMemo(() => {
     const cities: City[] = [];
     const seen = new Set<string>();
 
     const addCity = (city: City) => {
-      if (seen.has(city.id)) return;
+      if (seen.has(city.id) || removedCityIds.includes(city.id)) return;
       seen.add(city.id);
       cities.push(city);
     };
@@ -44,7 +46,7 @@ export default function WorldClockScreen() {
     }
 
     return cities;
-  }, [currentLocationCity, addedCities]);
+  }, [currentLocationCity, addedCities, removedCityIds]);
 
   const selectedCity = useMemo(() => {
     if (selectedCityId === CURRENT_LOCATION_ID && currentLocationCity) {
@@ -59,10 +61,50 @@ export default function WorldClockScreen() {
     setSelectedCityId(city.id);
   }, []);
 
+  const canRemoveCity = useCallback(
+    (_city: City) => displayedCities.length > 1,
+    [displayedCities],
+  );
+
+  const handlePinCity = useCallback((city: City) => {
+    setPinnedCityIds((current) => {
+      if (current.includes(city.id)) {
+        return current.filter((id) => id !== city.id);
+      }
+      return [city.id, ...current.filter((id) => id !== city.id)];
+    });
+    setSelectedCityId(city.id);
+  }, []);
+
+  const handleRemoveCity = useCallback(
+    (city: City) => {
+      if (displayedCities.length <= 1) return;
+
+      if (city.id === CURRENT_LOCATION_ID) {
+        setCurrentLocationCity(null);
+      } else {
+        setAddedCities((current) => current.filter((item) => item.id !== city.id));
+      }
+
+      setRemovedCityIds((current) =>
+        current.includes(city.id) ? current : [...current, city.id],
+      );
+      setPinnedCityIds((current) => current.filter((id) => id !== city.id));
+
+      if (selectedCityId === city.id) {
+        const remaining = displayedCities.filter((item) => item.id !== city.id);
+        setSelectedCityId(remaining[0]?.id ?? CITIES[0].id);
+      }
+    },
+    [displayedCities, selectedCityId],
+  );
+
   const handleSearchSelect = useCallback(
     (city: City) => {
       const isDefaultCity = CITIES.some((item) => item.id === city.id);
       const isCurrentLocation = city.id === CURRENT_LOCATION_ID;
+
+      setRemovedCityIds((current) => current.filter((id) => id !== city.id));
 
       if (!isDefaultCity && !isCurrentLocation) {
         setAddedCities((current) => {
@@ -131,9 +173,13 @@ export default function WorldClockScreen() {
         </ScrollView>
 
         <CityList
+          canRemoveCity={canRemoveCity}
           cities={displayedCities}
           now={now}
+          onPinCity={handlePinCity}
+          onRemoveCity={handleRemoveCity}
           onSelectCity={selectCity}
+          pinnedCityIds={pinnedCityIds}
           selectedCityId={selectedCityId}
         />
 

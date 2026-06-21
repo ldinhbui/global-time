@@ -5,32 +5,58 @@ import Animated, { LinearTransition } from "react-native-reanimated";
 import { City } from "@/constants/cities";
 import { Colors, Spacing } from "@/constants/theme";
 
-import { CityListItem } from "./CityListItem";
+import { SwipeableCityListItem } from "./SwipeableCityListItem";
 
 type CityListProps = {
   cities: City[];
   now: Date;
   selectedCityId: string;
+  pinnedCityIds: string[];
+  canRemoveCity: (city: City) => boolean;
   onSelectCity: (city: City) => void;
+  onPinCity: (city: City) => void;
+  onRemoveCity: (city: City) => void;
 };
 
-function orderCitiesWithSelectedFirst(cities: City[], selectedCityId: string) {
-  const selectedIndex = cities.findIndex((city) => city.id === selectedCityId);
-  if (selectedIndex <= 0) return cities;
+function orderCities(
+  cities: City[],
+  selectedCityId: string,
+  pinnedCityIds: string[],
+) {
+  const pinned = pinnedCityIds
+    .map((id) => cities.find((city) => city.id === id))
+    .filter((city): city is City => city !== undefined);
 
-  const selected = cities[selectedIndex];
-  return [selected, ...cities.filter((city) => city.id !== selectedCityId)];
+  const unpinned = cities.filter((city) => !pinnedCityIds.includes(city.id));
+
+  if (!pinnedCityIds.includes(selectedCityId)) {
+    const selectedIndex = unpinned.findIndex((city) => city.id === selectedCityId);
+    if (selectedIndex > 0) {
+      const selected = unpinned[selectedIndex];
+      return [
+        ...pinned,
+        selected,
+        ...unpinned.filter((city) => city.id !== selectedCityId),
+      ];
+    }
+  }
+
+  return [...pinned, ...unpinned];
 }
 
 export function CityList({
   cities,
   now,
   selectedCityId,
+  pinnedCityIds,
+  canRemoveCity,
   onSelectCity,
+  onPinCity,
+  onRemoveCity,
 }: CityListProps) {
   const orderedCities = useMemo(
-    () => orderCitiesWithSelectedFirst(cities, selectedCityId),
-    [cities, selectedCityId],
+    () => orderCities(cities, selectedCityId, pinnedCityIds),
+    [cities, selectedCityId, pinnedCityIds],
   );
 
   return (
@@ -41,10 +67,14 @@ export function CityList({
           layout={LinearTransition.springify().damping(500).stiffness(500)}
         >
           {index > 0 ? <View style={styles.separator} /> : null}
-          <CityListItem
+          <SwipeableCityListItem
+            canRemove={canRemoveCity(item)}
             city={item}
             now={now}
+            onPin={() => onPinCity(item)}
             onPress={() => onSelectCity(item)}
+            onRemove={() => onRemoveCity(item)}
+            pinned={pinnedCityIds.includes(item.id)}
             selected={item.id === selectedCityId}
             variant={item.id === "london" ? "light" : "dark"}
           />
