@@ -3,25 +3,13 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Colors, Spacing } from "@/constants/theme";
 
 type HeaderProps = {
-  onMenuPress?: () => void;
   onSearchPress?: () => void;
 };
 
-export function Header({ onMenuPress, onSearchPress }: HeaderProps) {
+export function Header({ onSearchPress }: HeaderProps) {
   return (
     <View style={styles.container}>
-      <Pressable
-        accessibilityLabel="Open menu"
-        hitSlop={12}
-        onPress={onMenuPress}
-        style={styles.iconButton}
-      >
-        <View style={styles.menuIcon}>
-          <View style={styles.menuLine} />
-          <View style={styles.menuLine} />
-          <View style={styles.menuLine} />
-        </View>
-      </Pressable>
+      <View style={styles.sideSlot} />
 
       <Text style={styles.title}>World Clock</Text>
 
@@ -29,7 +17,7 @@ export function Header({ onMenuPress, onSearchPress }: HeaderProps) {
         accessibilityLabel="Search cities"
         hitSlop={12}
         onPress={onSearchPress}
-        style={styles.iconButton}
+        style={styles.sideSlot}
       >
         <View style={styles.searchIcon}>
           <View style={styles.searchCircle} />
@@ -48,26 +36,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
-  iconButton: {
+  sideSlot: {
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
+    flex: 1,
     color: Colors.text,
     fontSize: 18,
     fontWeight: "600",
     letterSpacing: 0.2,
-  },
-  menuIcon: {
-    gap: 5,
-    width: 20,
-  },
-  menuLine: {
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: Colors.text,
+    textAlign: "center",
   },
   searchIcon: {
     width: 20,
