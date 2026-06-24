@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, LayoutChangeEvent, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CityList } from "@/components/world-clock/CityList";
@@ -26,6 +26,12 @@ export default function WorldClockScreen() {
   } = usePersistedCityList();
   const [isLocating, setIsLocating] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isListExpanded, setIsListExpanded] = useState(false);
+  const [mainHeight, setMainHeight] = useState(0);
+
+  const handleMainLayout = useCallback((event: LayoutChangeEvent) => {
+    setMainHeight(event.nativeEvent.layout.height);
+  }, []);
 
   const displayedCities = useMemo(() => {
     const cities: City[] = [];
@@ -145,31 +151,38 @@ export default function WorldClockScreen() {
       <View style={styles.container}>
         <Header onSearchPress={() => setIsSearchOpen(true)} />
 
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <GlobeSection
-            city={selectedCity}
-            isLocating={isLocating}
-            now={now}
-            onCenterLocation={centerToCurrentLocation}
-            onNext={selectNext}
-            onPrevious={selectPrevious}
-          />
-        </ScrollView>
+        <View onLayout={handleMainLayout} style={styles.main}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            pointerEvents={isListExpanded ? "none" : "auto"}
+            scrollEnabled={!isListExpanded}
+            showsVerticalScrollIndicator={false}
+            style={styles.globeScroll}
+          >
+            <GlobeSection
+              city={selectedCity}
+              isLocating={isLocating}
+              now={now}
+              onCenterLocation={centerToCurrentLocation}
+              onNext={selectNext}
+              onPrevious={selectPrevious}
+            />
+          </ScrollView>
 
-        <CityList
-          canRemoveCity={canRemoveCity}
-          cities={displayedCities}
-          now={now}
-          onPinCity={handlePinCity}
-          onRemoveCity={handleRemoveCity}
-          onSearchPress={() => setIsSearchOpen(true)}
-          onSelectCity={selectCity}
-          pinnedCityId={pinnedCityId}
-          selectedCityId={selectedCityId ?? ""}
-        />
+          <CityList
+            canRemoveCity={canRemoveCity}
+            cities={displayedCities}
+            hostHeight={mainHeight}
+            now={now}
+            onExpandedChange={setIsListExpanded}
+            onPinCity={handlePinCity}
+            onRemoveCity={handleRemoveCity}
+            onSearchPress={() => setIsSearchOpen(true)}
+            onSelectCity={selectCity}
+            pinnedCityId={pinnedCityId}
+            selectedCityId={selectedCityId ?? ""}
+          />
+        </View>
 
         <CitySearchModal
           now={now}
@@ -190,6 +203,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  main: {
+    flex: 1,
+    position: "relative",
+  },
+  globeScroll: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

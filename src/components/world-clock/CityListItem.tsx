@@ -6,6 +6,8 @@ import { formatTime, getClockAngles, getTimezoneLabel, isDaytime } from "@/utils
 
 import { AnalogClock } from "./AnalogClock";
 
+export const CITY_LIST_ITEM_HEIGHT = Spacing.md * 2 + 44;
+
 type CityListItemProps = {
   city: City;
   now: Date;
