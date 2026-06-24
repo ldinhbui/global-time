@@ -9,6 +9,7 @@ import Animated, {
   LinearTransition,
   clamp,
   runOnJS,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -72,6 +73,12 @@ function orderCities(
   return [...pinned, ...unpinned];
 }
 
+function getListContentHeight(itemCount: number) {
+  const separators = Math.max(0, itemCount - 1);
+
+  return itemCount * CITY_LIST_ITEM_HEIGHT + separators * SEPARATOR_HEIGHT;
+}
+
 function getCollapsedListHeight(itemCount: number) {
   const visibleCount = Math.min(itemCount, COLLAPSED_ITEM_COUNT);
   const separators = Math.max(0, visibleCount - 1);
@@ -81,6 +88,26 @@ function getCollapsedListHeight(itemCount: number) {
 
 const STATE_SWITCH_DRAG_DELTA = 1.5 * CITY_LIST_ITEM_HEIGHT;
 const DRAG_VELOCITY_THRESHOLD = 500;
+const SCROLL_EDGE_THRESHOLD = 1;
+const INSTANT_DRAG_THRESHOLD = 2;
+
+function isAtListBottom(
+  scrollOffset: number,
+  scrollContentHeight: number,
+  scrollViewportHeight: number,
+  atScrollBottom: boolean,
+) {
+  "worklet";
+
+  return (
+    atScrollBottom ||
+    scrollContentHeight <= scrollViewportHeight + SCROLL_EDGE_THRESHOLD ||
+    scrollOffset + scrollViewportHeight >=
+      scrollContentHeight - SCROLL_EDGE_THRESHOLD
+  );
+}
+
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export function CityList({
   cities,
@@ -104,6 +131,7 @@ export function CityList({
 
   const collapsedListHeight = getCollapsedListHeight(orderedCities.length);
   const collapsedHeight = HANDLE_HEIGHT + collapsedListHeight;
+  const listContentHeight = getListContentHeight(orderedCities.length);
 
   const sheetHeight = useSharedValue(collapsedHeight);
   const dragStartHeight = useSharedValue(collapsedHeight);
@@ -111,18 +139,33 @@ export function CityList({
   const expandedHeight = useSharedValue(hostHeight);
   const collapsedHeightShared = useSharedValue(collapsedHeight);
   const isExpandedShared = useSharedValue(false);
+  const scrollOffset = useSharedValue(0);
+  const scrollContentHeight = useSharedValue(listContentHeight);
+  const scrollViewportHeight = useSharedValue(collapsedListHeight);
+  const atScrollTop = useSharedValue(true);
+  const atScrollBottom = useSharedValue(true);
+  const lastTouchY = useSharedValue(0);
+  const listSheetDragActive = useSharedValue(false);
 
   useEffect(() => {
     isExpandedShared.value = expanded;
     expandedHeight.value = hostHeight;
     collapsedHeightShared.value = collapsedHeight;
+    scrollContentHeight.value = listContentHeight;
+    scrollViewportHeight.value = expanded
+      ? Math.max(0, hostHeight - HANDLE_HEIGHT)
+      : collapsedListHeight;
   }, [
     collapsedHeight,
     collapsedHeightShared,
+    collapsedListHeight,
     expanded,
     expandedHeight,
     hostHeight,
     isExpandedShared,
+    listContentHeight,
+    scrollContentHeight,
+    scrollViewportHeight,
   ]);
 
   useEffect(() => {
@@ -158,6 +201,23 @@ export function CityList({
   const toggleSheet = useCallback(() => {
     snapSheet(!expanded);
   }, [expanded, snapSheet]);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event;
+
+      scrollOffset.value = contentOffset.y;
+      scrollContentHeight.value = contentSize.height;
+      scrollViewportHeight.value = layoutMeasurement.height;
+      atScrollTop.value = contentOffset.y <= SCROLL_EDGE_THRESHOLD;
+      atScrollBottom.value =
+        contentSize.height <= layoutMeasurement.height + SCROLL_EDGE_THRESHOLD ||
+        contentOffset.y + layoutMeasurement.height >=
+          contentSize.height - SCROLL_EDGE_THRESHOLD;
+    },
+  });
+
+  const nativeScrollGesture = useMemo(() => Gesture.Native(), []);
 
   const tapGesture = useMemo(
     () =>
@@ -227,6 +287,125 @@ export function CityList({
     [panGesture, tapGesture],
   );
 
+  const listPanGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .manualActivation(true)
+        .simultaneousWithExternalGesture(nativeScrollGesture)
+        .onTouchesDown((event) => {
+          lastTouchY.value = event.allTouches[0]?.y ?? 0;
+        })
+        .onTouchesMove((event, state) => {
+          const touch = event.allTouches[0];
+          if (!touch) return;
+
+          const instantDy = touch.y - lastTouchY.value;
+          lastTouchY.value = touch.y;
+
+          if (Math.abs(instantDy) < INSTANT_DRAG_THRESHOLD) return;
+
+          const isAtBottom = isAtListBottom(
+            scrollOffset.value,
+            scrollContentHeight.value,
+            scrollViewportHeight.value,
+            atScrollBottom.value,
+          );
+          const wantsCollapse =
+            isExpandedShared.value && atScrollTop.value && instantDy > 0;
+          const wantsExpand =
+            !isExpandedShared.value && isAtBottom && instantDy < 0;
+
+          if (wantsCollapse || wantsExpand) {
+            state.activate();
+          }
+        })
+        .onStart(() => {
+          listSheetDragActive.value = false;
+          dragStartHeight.value = sheetHeight.value;
+          expandedAtDragStart.value = isExpandedShared.value;
+        })
+        .onUpdate((event) => {
+          const maxHeight = expandedHeight.value;
+          const minHeight = collapsedHeightShared.value;
+
+          if (maxHeight <= minHeight) return;
+
+          const isAtBottom = isAtListBottom(
+            scrollOffset.value,
+            scrollContentHeight.value,
+            scrollViewportHeight.value,
+            atScrollBottom.value,
+          );
+          const shouldCollapse =
+            expandedAtDragStart.value &&
+            atScrollTop.value &&
+            event.translationY > 0;
+          const shouldExpand =
+            !expandedAtDragStart.value && isAtBottom && event.translationY < 0;
+
+          if (!shouldCollapse && !shouldExpand) {
+            return;
+          }
+
+          listSheetDragActive.value = true;
+          sheetHeight.value = clamp(
+            dragStartHeight.value - event.translationY,
+            minHeight,
+            maxHeight,
+          );
+        })
+        .onEnd((event) => {
+          if (!listSheetDragActive.value) return;
+
+          listSheetDragActive.value = false;
+
+          const maxHeight = expandedHeight.value;
+          const minHeight = collapsedHeightShared.value;
+
+          if (maxHeight <= minHeight) return;
+
+          const dragDelta = sheetHeight.value - dragStartHeight.value;
+
+          let nextExpanded = expandedAtDragStart.value;
+
+          if (Math.abs(dragDelta) >= STATE_SWITCH_DRAG_DELTA) {
+            nextExpanded = !expandedAtDragStart.value;
+          } else if (event.velocityY < -DRAG_VELOCITY_THRESHOLD) {
+            nextExpanded = true;
+          } else if (event.velocityY > DRAG_VELOCITY_THRESHOLD) {
+            nextExpanded = false;
+          }
+
+          const target = nextExpanded ? maxHeight : minHeight;
+          sheetHeight.value = withSpring(target, {
+            ...SPRING_CONFIG,
+            velocity: -event.velocityY,
+          });
+          runOnJS(handleExpandedChange)(nextExpanded);
+        }),
+    [
+      atScrollBottom,
+      atScrollTop,
+      collapsedHeightShared,
+      dragStartHeight,
+      expandedAtDragStart,
+      expandedHeight,
+      handleExpandedChange,
+      lastTouchY,
+      listSheetDragActive,
+      nativeScrollGesture,
+      scrollContentHeight,
+      scrollOffset,
+      scrollViewportHeight,
+      sheetHeight,
+    ],
+  );
+
+  const listGesture = useMemo(
+    () => Gesture.Simultaneous(listPanGesture, nativeScrollGesture),
+    [listPanGesture, nativeScrollGesture],
+  );
+
   const sheetStyle = useAnimatedStyle(() => ({
     height: sheetHeight.value,
   }));
@@ -275,16 +454,35 @@ export function CityList({
         </Animated.View>
       </GestureDetector>
 
-      <ScrollView
-        bounces={orderedCities.length > COLLAPSED_ITEM_COUNT}
-        nestedScrollEnabled
-        showsVerticalScrollIndicator={
-          expanded || orderedCities.length > COLLAPSED_ITEM_COUNT
-        }
-        style={styles.list}
-      >
-        {listContent}
-      </ScrollView>
+      <GestureDetector gesture={listGesture}>
+        <AnimatedScrollView
+          bounces={orderedCities.length > COLLAPSED_ITEM_COUNT}
+          nestedScrollEnabled
+          onContentSizeChange={(_, height) => {
+            scrollContentHeight.value = height;
+            atScrollBottom.value =
+              height <= scrollViewportHeight.value + SCROLL_EDGE_THRESHOLD ||
+              scrollOffset.value + scrollViewportHeight.value >=
+                height - SCROLL_EDGE_THRESHOLD;
+          }}
+          onLayout={(event) => {
+            const viewportHeight = event.nativeEvent.layout.height;
+            scrollViewportHeight.value = viewportHeight;
+            atScrollBottom.value =
+              scrollContentHeight.value <= viewportHeight + SCROLL_EDGE_THRESHOLD ||
+              scrollOffset.value + viewportHeight >=
+                scrollContentHeight.value - SCROLL_EDGE_THRESHOLD;
+          }}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={
+            expanded || orderedCities.length > COLLAPSED_ITEM_COUNT
+          }
+          style={styles.list}
+        >
+          {listContent}
+        </AnimatedScrollView>
+      </GestureDetector>
     </Animated.View>
   );
 }
