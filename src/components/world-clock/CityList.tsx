@@ -155,6 +155,18 @@ export function CityList({
     }
   }, [orderedCities.length, expanded, snapSheet]);
 
+  const toggleSheet = useCallback(() => {
+    snapSheet(!expanded);
+  }, [expanded, snapSheet]);
+
+  const tapGesture = useMemo(
+    () =>
+      Gesture.Tap().onEnd(() => {
+        runOnJS(toggleSheet)();
+      }),
+    [toggleSheet],
+  );
+
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
@@ -182,15 +194,10 @@ export function CityList({
           if (maxHeight <= minHeight) return;
 
           const dragDelta = sheetHeight.value - dragStartHeight.value;
-          const isTap =
-            Math.abs(event.translationY) < 10 &&
-            Math.abs(event.velocityY) < 150;
 
           let nextExpanded = expandedAtDragStart.value;
 
-          if (isTap) {
-            nextExpanded = !expandedAtDragStart.value;
-          } else if (Math.abs(dragDelta) >= STATE_SWITCH_DRAG_DELTA) {
+          if (Math.abs(dragDelta) >= STATE_SWITCH_DRAG_DELTA) {
             nextExpanded = !expandedAtDragStart.value;
           } else if (event.velocityY < -DRAG_VELOCITY_THRESHOLD) {
             nextExpanded = true;
@@ -213,6 +220,11 @@ export function CityList({
       handleExpandedChange,
       sheetHeight,
     ],
+  );
+
+  const handleGesture = useMemo(
+    () => Gesture.Exclusive(tapGesture, panGesture),
+    [panGesture, tapGesture],
   );
 
   const sheetStyle = useAnimatedStyle(() => ({
@@ -251,12 +263,12 @@ export function CityList({
 
   return (
     <Animated.View style={[styles.sheet, sheetStyle]}>
-      <GestureDetector gesture={panGesture}>
+      <GestureDetector gesture={handleGesture}>
         <Animated.View
           accessibilityLabel={
             expanded ? "Collapse city list" : "Expand city list"
           }
-          accessibilityRole="adjustable"
+          accessibilityRole="button"
           style={styles.handle}
         >
           <View style={styles.handlePill} />
