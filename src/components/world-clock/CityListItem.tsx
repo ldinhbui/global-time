@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Colors, Spacing } from "@/constants/theme";
 import { City } from "@/constants/cities";
-import { formatTime, getClockAngles, getTimezoneLabel } from "@/utils/time";
+import { formatTime, getClockAngles, getTimezoneLabel, isDaytime } from "@/utils/time";
 
 import { AnalogClock } from "./AnalogClock";
 
@@ -12,7 +12,6 @@ type CityListItemProps = {
   selected?: boolean;
   pinned?: boolean;
   onPress?: () => void;
-  variant?: "dark" | "light";
 };
 
 export function CityListItem({
@@ -21,9 +20,9 @@ export function CityListItem({
   selected = false,
   pinned = false,
   onPress,
-  variant = "dark",
 }: CityListItemProps) {
-  const { hourAngle, minuteAngle } = getClockAngles(now, city.timezone);
+  const { hourAngle, minuteAngle, secondAngle } = getClockAngles(now, city.timezone);
+  const daytime = isDaytime(now, city.timezone);
 
   return (
     <Pressable
@@ -33,7 +32,8 @@ export function CityListItem({
       <AnalogClock
         hourAngle={hourAngle}
         minuteAngle={minuteAngle}
-        variant={variant}
+        secondAngle={secondAngle}
+        variant={daytime ? "light" : "dark"}
       />
 
       <View style={styles.details}>

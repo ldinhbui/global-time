@@ -20,6 +20,7 @@ type AnalogClockProps = {
   secondAngle?: number;
   size?: number;
   showSeconds?: boolean;
+  variant?: "dark" | "light";
 };
 
 type HandProps = {
@@ -121,6 +122,7 @@ export function AnalogClock({
   secondAngle = 0,
   size = 44,
   showSeconds,
+  variant = "dark",
 }: AnalogClockProps) {
   const isSmall = size < CLOCK_SIZE_SMALL;
   const referenceSize = isSmall ? CLOCK_SIZE_SMALL : 12 * 32;
@@ -131,11 +133,12 @@ export function AnalogClock({
   );
   const shouldShowSeconds = showSeconds ?? !isSmall;
   const capSize = Math.max(3, Math.round(size * HAND_CAP_SIZE_RATIO));
+  const isLight = variant === "light";
 
-  const faceColor = Colors.background;
-  const ringColor = "rgba(255,255,255,0.16)";
-  const handColor = Colors.text;
-  const tickColor = "rgba(255,255,255,0.35)";
+  const faceColor = isLight ? "#FFFFFF" : Colors.background;
+  const ringColor = isLight ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.16)";
+  const handColor = isLight ? "#1A1A1A" : Colors.text;
+  const tickColor = isLight ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.35)";
 
   return (
     <View style={{ width: size, height: size }}>
