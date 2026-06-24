@@ -35,6 +35,7 @@ export function SwipeableCityListItem({
   variant = "dark",
 }: SwipeableCityListItemProps) {
   const swipeableRef = useRef<Swipeable>(null);
+  const actionTriggeredRef = useRef(false);
 
   const closeSwipeable = () => {
     swipeableRef.current?.close();
@@ -54,15 +55,18 @@ export function SwipeableCityListItem({
     onRemove?.();
   };
 
-  const handleSwipeableOpen = (direction: "left" | "right") => {
-    if (direction === "left") {
-      handlePin();
-      return;
-    }
+  const handleSwipeableWillOpen = (direction: "left" | "right") => {
+    // Fires as soon as the row decides to open (i.e. after release past threshold),
+    // which feels instant compared to waiting for onSwipeableOpen.
+    if (actionTriggeredRef.current) return;
+    actionTriggeredRef.current = true;
 
-    if (direction === "right") {
-      handleRemove();
-    }
+    if (direction === "left") handlePin();
+    if (direction === "right") handleRemove();
+  };
+
+  const handleSwipeableClose = () => {
+    actionTriggeredRef.current = false;
   };
 
   const renderLeftActions = () => (
@@ -112,21 +116,17 @@ export function SwipeableCityListItem({
   return (
     <Swipeable
       ref={swipeableRef}
-      friction={2}
-      leftThreshold={ACTION_WIDTH / 2}
-      onSwipeableOpen={handleSwipeableOpen}
+      friction={1}
+      leftThreshold={ACTION_WIDTH}
+      onSwipeableWillOpen={handleSwipeableWillOpen}
+      onSwipeableClose={handleSwipeableClose}
       overshootLeft={false}
       overshootRight={false}
       renderLeftActions={renderLeftActions}
       renderRightActions={renderRightActions}
-      rightThreshold={ACTION_WIDTH / 2}
+      rightThreshold={ACTION_WIDTH}
     >
-      <View
-        style={[
-          styles.foreground,
-          selected && styles.foregroundSelected,
-        ]}
-      >
+      <View style={[styles.foreground, selected && styles.foregroundSelected]}>
         <CityListItem
           city={city}
           now={now}
