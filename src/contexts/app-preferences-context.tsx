@@ -4,9 +4,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import type { SharedValue } from "react-native-reanimated";
+import {
+  cancelAnimation,
+  Easing,
+  runOnJS,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 import {
   AppPreferences,
@@ -17,6 +26,7 @@ import {
 } from "@/constants/preferences";
 import {
   ColorPalette,
+  darkColors,
   getColorsForScheme,
 } from "@/constants/theme";
 import {
@@ -24,9 +34,13 @@ import {
   savePreferences,
 } from "@/utils/preferences-storage";
 
+const THEME_TRANSITION_MS = 400;
+
 type AppPreferencesContextValue = {
   preferences: AppPreferences;
   colors: ColorPalette;
+  themeProgress: SharedValue<number>;
+  isLightAppearance: boolean;
   isHydrated: boolean;
   setTimeFormat: (format: TimeFormat) => void;
   setDateFormat: (format: DateFormat) => void;
@@ -40,7 +54,16 @@ const AppPreferencesContext = createContext<AppPreferencesContextValue | null>(
 export function AppPreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] =
     useState<AppPreferences>(DEFAULT_PREFERENCES);
+  const [colors, setColors] = useState<ColorPalette>(darkColors);
+  const [isLightAppearance, setIsLightAppearance] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const hasAppliedInitialTheme = useRef(false);
+  const themeProgress = useSharedValue(0);
+
+  const finalizeTheme = useCallback((scheme: ColorScheme) => {
+    setColors(getColorsForScheme(scheme));
+    setIsLightAppearance(scheme === "light");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +78,34 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const scheme = preferences.colorScheme;
+    const target = scheme === "light" ? 1 : 0;
+
+    if (!hasAppliedInitialTheme.current) {
+      hasAppliedInitialTheme.current = true;
+      themeProgress.value = target;
+      finalizeTheme(scheme);
+      return;
+    }
+
+    cancelAnimation(themeProgress);
+    themeProgress.value = withTiming(
+      target,
+      {
+        duration: THEME_TRANSITION_MS,
+        easing: Easing.inOut(Easing.cubic),
+      },
+      (finished) => {
+        if (finished) {
+          runOnJS(finalizeTheme)(scheme);
+        }
+      },
+    );
+  }, [finalizeTheme, isHydrated, preferences.colorScheme, themeProgress]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -73,15 +124,12 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     setPreferences((current) => ({ ...current, colorScheme }));
   }, []);
 
-  const colors = useMemo(
-    () => getColorsForScheme(preferences.colorScheme),
-    [preferences.colorScheme],
-  );
-
   const value = useMemo(
     () => ({
       preferences,
       colors,
+      themeProgress,
+      isLightAppearance,
       isHydrated,
       setTimeFormat,
       setDateFormat,
@@ -90,6 +138,8 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     [
       preferences,
       colors,
+      themeProgress,
+      isLightAppearance,
       isHydrated,
       setTimeFormat,
       setDateFormat,

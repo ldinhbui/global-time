@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import {
   Gesture,
   GestureDetector,
@@ -17,7 +17,7 @@ import Animated, {
 
 import { City } from "@/constants/cities";
 import { Spacing } from "@/constants/theme";
-import { useAppPreferences } from "@/contexts/app-preferences-context";
+import { useThemeStyle } from "@/hooks/use-theme-color";
 
 import { CITY_LIST_ITEM_HEIGHT } from "./CityListItem";
 import { SwipeableCityListItem } from "./SwipeableCityListItem";
@@ -123,70 +123,12 @@ export function CityList({
   onSearchPress,
   onExpandedChange,
 }: CityListProps) {
-  const { colors } = useAppPreferences();
-
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        sheet: {
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: colors.surfaceElevated,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          borderWidth: 1,
-          borderBottomWidth: 0,
-          borderColor: colors.border,
-          overflow: "hidden",
-        },
-        container: {
-          backgroundColor: colors.surfaceElevated,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          borderWidth: 1,
-          borderBottomWidth: 0,
-          borderColor: colors.border,
-          overflow: "hidden",
-        },
-        handle: {
-          height: HANDLE_HEIGHT,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        handlePill: {
-          width: 40,
-          height: 4,
-          borderRadius: 2,
-          backgroundColor: colors.textSecondary,
-        },
-        list: {
-          flex: 1,
-        },
-        separator: {
-          height: SEPARATOR_HEIGHT,
-          backgroundColor: colors.border,
-          marginHorizontal: Spacing.md,
-        },
-        emptyState: {
-          alignItems: "center",
-          paddingVertical: Spacing.xl,
-          paddingHorizontal: Spacing.md,
-          gap: Spacing.xs,
-        },
-        emptyTitle: {
-          color: colors.text,
-          fontSize: 15,
-          fontWeight: "600",
-        },
-        emptyHint: {
-          color: colors.textSecondary,
-          fontSize: 14,
-        },
-      }),
-    [colors],
-  );
+  const sheetBackgroundStyle = useThemeStyle("surfaceElevated", "backgroundColor");
+  const sheetBorderStyle = useThemeStyle("border", "borderColor");
+  const handlePillStyle = useThemeStyle("textSecondary", "backgroundColor");
+  const separatorStyle = useThemeStyle("border", "backgroundColor");
+  const emptyTitleStyle = useThemeStyle("text", "color");
+  const emptyHintStyle = useThemeStyle("textSecondary", "color");
 
   const [expanded, setExpanded] = useState(false);
 
@@ -481,7 +423,9 @@ export function CityList({
       key={item.id}
       layout={LinearTransition.springify().damping(500).stiffness(500)}
     >
-      {index > 0 ? <View style={styles.separator} /> : null}
+      {index > 0 ? (
+        <Animated.View style={[styles.separator, separatorStyle]} />
+      ) : null}
       <SwipeableCityListItem
         canRemove={canRemoveCity(item)}
         city={item}
@@ -497,17 +441,25 @@ export function CityList({
 
   if (orderedCities.length === 0) {
     return (
-      <View style={styles.container}>
+      <Animated.View
+        style={[styles.container, sheetBackgroundStyle, sheetBorderStyle]}
+      >
         <Pressable onPress={onSearchPress} style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No cities yet</Text>
-          <Text style={styles.emptyHint}>Tap to search and add a city</Text>
+          <Animated.Text style={[styles.emptyTitle, emptyTitleStyle]}>
+            No cities yet
+          </Animated.Text>
+          <Animated.Text style={[styles.emptyHint, emptyHintStyle]}>
+            Tap to search and add a city
+          </Animated.Text>
         </Pressable>
-      </View>
+      </Animated.View>
     );
   }
 
   return (
-    <Animated.View style={[styles.sheet, sheetStyle]}>
+    <Animated.View
+      style={[styles.sheet, sheetBackgroundStyle, sheetBorderStyle, sheetStyle]}
+    >
       <GestureDetector gesture={handleGesture}>
         <Animated.View
           accessibilityLabel={
@@ -516,7 +468,7 @@ export function CityList({
           accessibilityRole="button"
           style={styles.handle}
         >
-          <View style={styles.handlePill} />
+          <Animated.View style={[styles.handlePill, handlePillStyle]} />
         </Animated.View>
       </GestureDetector>
 
@@ -552,3 +504,54 @@ export function CityList({
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  sheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    overflow: "hidden",
+  },
+  container: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    overflow: "hidden",
+  },
+  handle: {
+    height: HANDLE_HEIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  handlePill: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  list: {
+    flex: 1,
+  },
+  separator: {
+    height: SEPARATOR_HEIGHT,
+    marginHorizontal: Spacing.md,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.xs,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  emptyHint: {
+    fontSize: 14,
+  },
+});

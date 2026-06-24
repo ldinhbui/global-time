@@ -3,9 +3,8 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -13,8 +12,12 @@ import {
   DATE_FORMAT_OPTIONS,
   TIME_FORMAT_OPTIONS,
 } from "@/constants/preferences";
-import { Spacing } from "@/constants/theme";
+import { Spacing, darkColors, lightColors } from "@/constants/theme";
 import { useAppPreferences } from "@/contexts/app-preferences-context";
+import {
+  useThemeInterpolateStyle,
+  useThemeStyle,
+} from "@/hooks/use-theme-color";
 
 type SettingsModalProps = {
   visible: boolean;
@@ -28,86 +31,108 @@ type OptionRowProps<T extends string> = {
   onSelect: (value: T) => void;
 };
 
+type OptionItemProps<T extends string> = {
+  option: { value: T; label: string; example?: string };
+  isSelected: boolean;
+  isLast: boolean;
+  onSelect: (value: T) => void;
+};
+
+function OptionItem<T extends string>({
+  option,
+  isSelected,
+  isLast,
+  onSelect,
+}: OptionItemProps<T>) {
+  const { colors } = useAppPreferences();
+  const accentStyle = useThemeStyle("accent", "color");
+  const exampleStyle = useThemeStyle("textSecondary", "color");
+  const labelStyle = useThemeInterpolateStyle(
+    "color",
+    isSelected ? darkColors.accent : darkColors.text,
+    isSelected ? lightColors.accent : lightColors.text,
+    [isSelected],
+  );
+
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected: isSelected }}
+      onPress={() => onSelect(option.value)}
+      style={({ pressed }) => [
+        styles.optionRow,
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border,
+        },
+        pressed && { backgroundColor: colors.accentMuted },
+      ]}
+    >
+      <Animated.View style={styles.optionContent}>
+        <Animated.Text style={[styles.optionLabel, labelStyle]}>
+          {option.label}
+        </Animated.Text>
+        {option.example ? (
+          <Animated.Text style={[styles.optionExample, exampleStyle]}>
+            {option.example}
+          </Animated.Text>
+        ) : null}
+      </Animated.View>
+      {isSelected ? (
+        <Animated.Text style={[styles.checkmark, accentStyle]}>✓</Animated.Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
 function OptionRow<T extends string>({
   label,
   options,
   selected,
   onSelect,
 }: OptionRowProps<T>) {
-  const { colors } = useAppPreferences();
+  const sectionLabelStyle = useThemeStyle("textSecondary", "color");
+  const groupBackgroundStyle = useThemeStyle("surface", "backgroundColor");
+  const groupBorderStyle = useThemeStyle("border", "borderColor");
 
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+    <Animated.View style={styles.section}>
+      <Animated.Text style={[styles.sectionLabel, sectionLabelStyle]}>
         {label}
-      </Text>
-      <View
+      </Animated.Text>
+      <Animated.View
         style={[
           styles.optionGroup,
-          { backgroundColor: colors.surface, borderColor: colors.border },
+          groupBackgroundStyle,
+          groupBorderStyle,
         ]}
       >
-        {options.map((option, index) => {
-          const isSelected = option.value === selected;
-          const isLast = index === options.length - 1;
-
-          return (
-            <Pressable
-              key={option.value}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
-              onPress={() => onSelect(option.value)}
-              style={({ pressed }) => [
-                styles.optionRow,
-                !isLast && {
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: colors.border,
-                },
-                pressed && { backgroundColor: colors.accentMuted },
-              ]}
-            >
-              <View style={styles.optionContent}>
-                <Text
-                  style={[
-                    styles.optionLabel,
-                    { color: isSelected ? colors.accent : colors.text },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                {option.example ? (
-                  <Text
-                    style={[
-                      styles.optionExample,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {option.example}
-                  </Text>
-                ) : null}
-              </View>
-              {isSelected ? (
-                <Text style={[styles.checkmark, { color: colors.accent }]}>
-                  ✓
-                </Text>
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+        {options.map((option, index) => (
+          <OptionItem
+            key={option.value}
+            isLast={index === options.length - 1}
+            isSelected={option.value === selected}
+            onSelect={onSelect}
+            option={option}
+          />
+        ))}
+      </Animated.View>
+    </Animated.View>
   );
 }
 
 export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const insets = useSafeAreaInsets();
   const {
-    colors,
     preferences,
     setColorScheme,
     setDateFormat,
     setTimeFormat,
   } = useAppPreferences();
+
+  const backgroundStyle = useThemeStyle("background", "backgroundColor");
+  const titleStyle = useThemeStyle("text", "color");
+  const closeLabelStyle = useThemeStyle("accent", "color");
 
   return (
     <Modal
@@ -116,28 +141,26 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
       presentationStyle="pageSheet"
       visible={visible}
     >
-      <View
+      <Animated.View
         style={[
           styles.container,
-          {
-            backgroundColor: colors.background,
-            paddingTop: insets.top + Spacing.sm,
-          },
+          backgroundStyle,
+          { paddingTop: insets.top + Spacing.sm },
         ]}
       >
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+        <Animated.View style={styles.header}>
+          <Animated.Text style={[styles.title, titleStyle]}>Settings</Animated.Text>
           <Pressable
             accessibilityLabel="Close settings"
             hitSlop={12}
             onPress={onClose}
             style={styles.closeButton}
           >
-            <Text style={[styles.closeLabel, { color: colors.accent }]}>
+            <Animated.Text style={[styles.closeLabel, closeLabelStyle]}>
               Done
-            </Text>
+            </Animated.Text>
           </Pressable>
-        </View>
+        </Animated.View>
 
         <ScrollView
           contentContainerStyle={styles.content}
@@ -164,7 +187,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
             selected={preferences.dateFormat}
           />
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

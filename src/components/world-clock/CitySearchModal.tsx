@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
-  View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { City } from "@/constants/cities";
 import { Spacing } from "@/constants/theme";
 import { useAppPreferences } from "@/contexts/app-preferences-context";
+import { useThemeStyle } from "@/hooks/use-theme-color";
 import {
   GeocodingError,
   MIN_QUERY_LENGTH,
@@ -49,6 +49,20 @@ export function CitySearchModal({
   const [results, setResults] = useState<City[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const backgroundStyle = useThemeStyle("background", "backgroundColor");
+  const titleStyle = useThemeStyle("text", "color");
+  const closeLabelStyle = useThemeStyle("accent", "color");
+  const searchFieldBackgroundStyle = useThemeStyle("surface", "backgroundColor");
+  const searchFieldBorderStyle = useThemeStyle("border", "borderColor");
+  const searchIconBorderStyle = useThemeStyle("textSecondary", "borderColor");
+  const searchIconFillStyle = useThemeStyle("textSecondary", "backgroundColor");
+  const inputStyle = useThemeStyle("text", "color");
+  const resultCityStyle = useThemeStyle("text", "color");
+  const resultTimezoneStyle = useThemeStyle("textSecondary", "color");
+  const resultTimeStyle = useThemeStyle("text", "color");
+  const separatorStyle = useThemeStyle("border", "backgroundColor");
+  const emptyTextStyle = useThemeStyle("textSecondary", "color");
 
   useEffect(() => {
     if (!visible) {
@@ -107,128 +121,6 @@ export function CitySearchModal({
   const emptyMessage = getEmptyMessage(query, isSearching, error);
   const showEmptyState = !isSearching && results.length === 0 && emptyMessage;
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        container: {
-          flex: 1,
-          backgroundColor: colors.background,
-        },
-        header: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: Spacing.md,
-          marginBottom: Spacing.md,
-        },
-        title: {
-          color: colors.text,
-          fontSize: 20,
-          fontWeight: "600",
-        },
-        closeButton: {
-          paddingVertical: Spacing.xs,
-          paddingHorizontal: Spacing.sm,
-        },
-        closeLabel: {
-          color: colors.accent,
-          fontSize: 16,
-          fontWeight: "500",
-        },
-        searchField: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: Spacing.sm,
-          marginHorizontal: Spacing.md,
-          marginBottom: Spacing.md,
-          paddingHorizontal: Spacing.md,
-          paddingVertical: Spacing.sm,
-          borderRadius: 12,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-        searchIcon: {
-          width: 18,
-          height: 18,
-          position: "relative",
-        },
-        searchCircle: {
-          width: 12,
-          height: 12,
-          borderRadius: 6,
-          borderWidth: 2,
-          borderColor: colors.textSecondary,
-          position: "absolute",
-          top: 0,
-          left: 0,
-        },
-        searchHandle: {
-          width: 6,
-          height: 2,
-          borderRadius: 1,
-          backgroundColor: colors.textSecondary,
-          position: "absolute",
-          bottom: 1,
-          right: 0,
-          transform: [{ rotate: "45deg" }],
-        },
-        input: {
-          flex: 1,
-          color: colors.text,
-          fontSize: 16,
-          paddingVertical: Spacing.xs,
-        },
-        list: {
-          flex: 1,
-        },
-        resultRow: {
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: Spacing.md,
-          paddingVertical: Spacing.md,
-          gap: Spacing.md,
-        },
-        resultRowPressed: {
-          backgroundColor: colors.accentMuted,
-        },
-        resultDetails: {
-          flex: 1,
-          gap: 2,
-        },
-        resultCity: {
-          color: colors.text,
-          fontSize: 16,
-          fontWeight: "600",
-        },
-        resultTimezone: {
-          color: colors.textSecondary,
-          fontSize: 13,
-        },
-        resultTime: {
-          color: colors.text,
-          fontSize: 16,
-          fontWeight: "700",
-        },
-        separator: {
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: colors.border,
-          marginHorizontal: Spacing.md,
-        },
-        emptyText: {
-          color: colors.textSecondary,
-          fontSize: 15,
-          textAlign: "center",
-          marginTop: Spacing.xl,
-          paddingHorizontal: Spacing.lg,
-        },
-        errorText: {
-          color: "#F87171",
-        },
-      }),
-    [colors],
-  );
-
   return (
     <Modal
       animationType="slide"
@@ -236,24 +128,40 @@ export function CitySearchModal({
       presentationStyle="pageSheet"
       visible={visible}
     >
-      <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Search Cities</Text>
+      <Animated.View
+        style={[
+          styles.container,
+          backgroundStyle,
+          { paddingTop: insets.top + Spacing.sm },
+        ]}
+      >
+        <Animated.View style={styles.header}>
+          <Animated.Text style={[styles.title, titleStyle]}>
+            Search Cities
+          </Animated.Text>
           <Pressable
             accessibilityLabel="Close search"
             hitSlop={12}
             onPress={onClose}
             style={styles.closeButton}
           >
-            <Text style={styles.closeLabel}>Cancel</Text>
+            <Animated.Text style={[styles.closeLabel, closeLabelStyle]}>
+              Cancel
+            </Animated.Text>
           </Pressable>
-        </View>
+        </Animated.View>
 
-        <View style={styles.searchField}>
-          <View style={styles.searchIcon}>
-            <View style={styles.searchCircle} />
-            <View style={styles.searchHandle} />
-          </View>
+        <Animated.View
+          style={[
+            styles.searchField,
+            searchFieldBackgroundStyle,
+            searchFieldBorderStyle,
+          ]}
+        >
+          <Animated.View style={styles.searchIcon}>
+            <Animated.View style={[styles.searchCircle, searchIconBorderStyle]} />
+            <Animated.View style={[styles.searchHandle, searchIconFillStyle]} />
+          </Animated.View>
           <TextInput
             autoCapitalize="none"
             autoCorrect={false}
@@ -263,29 +171,32 @@ export function CitySearchModal({
             placeholder="Search any city"
             placeholderTextColor={colors.textSecondary}
             returnKeyType="search"
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             value={query}
           />
           {isSearching ? (
             <ActivityIndicator color={colors.accent} size="small" />
           ) : null}
-        </View>
+        </Animated.View>
 
         <FlatList
           data={results}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => (
+            <Animated.View style={[styles.separator, separatorStyle]} />
+          )}
           keyboardShouldPersistTaps="handled"
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
             showEmptyState ? (
-              <Text
+              <Animated.Text
                 style={[
                   styles.emptyText,
+                  emptyTextStyle,
                   error ? styles.errorText : null,
                 ]}
               >
                 {emptyMessage}
-              </Text>
+              </Animated.Text>
             ) : null
           }
           renderItem={({ item }) => (
@@ -293,27 +204,131 @@ export function CitySearchModal({
               onPress={() => onSelectCity(item)}
               style={({ pressed }) => [
                 styles.resultRow,
-                pressed && styles.resultRowPressed,
+                pressed && { backgroundColor: colors.accentMuted },
               ]}
             >
-              <View style={styles.resultDetails}>
-                <Text style={styles.resultCity}>
+              <Animated.View style={styles.resultDetails}>
+                <Animated.Text style={[styles.resultCity, resultCityStyle]}>
                   {item.name}, {item.country}
-                </Text>
-                <Text style={styles.resultTimezone}>
+                </Animated.Text>
+                <Animated.Text
+                  style={[styles.resultTimezone, resultTimezoneStyle]}
+                >
                   {item.region
                     ? `${item.region} · ${getTimezoneLabel(now, item.timezone)}`
                     : getTimezoneLabel(now, item.timezone)}
-                </Text>
-              </View>
-              <Text style={styles.resultTime}>
+                </Animated.Text>
+              </Animated.View>
+              <Animated.Text style={[styles.resultTime, resultTimeStyle]}>
                 {formatTime(now, item.timezone, preferences.timeFormat)}
-              </Text>
+              </Animated.Text>
             </Pressable>
           )}
           style={styles.list}
         />
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  closeButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  closeLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  searchField: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  searchIcon: {
+    width: 18,
+    height: 18,
+    position: "relative",
+  },
+  searchCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  searchHandle: {
+    width: 6,
+    height: 2,
+    borderRadius: 1,
+    position: "absolute",
+    bottom: 1,
+    right: 0,
+    transform: [{ rotate: "45deg" }],
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: Spacing.xs,
+  },
+  list: {
+    flex: 1,
+  },
+  resultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  resultDetails: {
+    flex: 1,
+    gap: 2,
+  },
+  resultCity: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  resultTimezone: {
+    fontSize: 13,
+  },
+  resultTime: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: Spacing.md,
+  },
+  emptyText: {
+    fontSize: 15,
+    textAlign: "center",
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+  },
+  errorText: {
+    color: "#F87171",
+  },
+});

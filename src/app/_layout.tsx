@@ -6,19 +6,23 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppPreferencesProvider, useAppPreferences } from "@/contexts/app-preferences-context";
 
 function RootNavigator() {
-  const { colors, preferences } = useAppPreferences();
-
   return (
     <>
-      <StatusBar style={preferences.colorScheme === "light" ? "dark" : "light"} />
+      <StatusBarController />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: "transparent" },
         }}
       />
     </>
   );
+}
+
+function StatusBarController() {
+  const { isLightAppearance } = useAppPreferences();
+
+  return <StatusBar style={isLightAppearance ? "dark" : "light"} />;
 }
 
 export default function RootLayout() {

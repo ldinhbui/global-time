@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 
 import { Spacing } from "@/constants/theme";
-import { useAppPreferences } from "@/contexts/app-preferences-context";
+import { useThemeStyle } from "@/hooks/use-theme-color";
 
 type HeaderProps = {
   onSettingsPress?: () => void;
@@ -9,25 +10,26 @@ type HeaderProps = {
 };
 
 export function Header({ onSettingsPress, onSearchPress }: HeaderProps) {
-  const { colors } = useAppPreferences();
-  const lineColor = colors.text;
+  const titleStyle = useThemeStyle("text", "color");
+  const lineStyle = useThemeStyle("text", "backgroundColor");
+  const borderStyle = useThemeStyle("text", "borderColor");
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={styles.container}>
       <Pressable
         accessibilityLabel="Open settings"
         hitSlop={12}
         onPress={onSettingsPress}
         style={styles.iconButton}
       >
-        <View style={styles.menuIcon}>
-          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
-          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
-          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
-        </View>
+        <Animated.View style={styles.menuIcon}>
+          <Animated.View style={[styles.menuLine, lineStyle]} />
+          <Animated.View style={[styles.menuLine, lineStyle]} />
+          <Animated.View style={[styles.menuLine, lineStyle]} />
+        </Animated.View>
       </Pressable>
 
-      <Text style={[styles.title, { color: colors.text }]}>World Clock</Text>
+      <Animated.Text style={[styles.title, titleStyle]}>World Clock</Animated.Text>
 
       <Pressable
         accessibilityLabel="Search cities"
@@ -35,16 +37,12 @@ export function Header({ onSettingsPress, onSearchPress }: HeaderProps) {
         onPress={onSearchPress}
         style={styles.iconButton}
       >
-        <View style={styles.searchIcon}>
-          <View
-            style={[styles.searchCircle, { borderColor: lineColor }]}
-          />
-          <View
-            style={[styles.searchHandle, { backgroundColor: lineColor }]}
-          />
-        </View>
+        <Animated.View style={styles.searchIcon}>
+          <Animated.View style={[styles.searchCircle, borderStyle]} />
+          <Animated.View style={[styles.searchHandle, lineStyle]} />
+        </Animated.View>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 

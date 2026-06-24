@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, LayoutChangeEvent, ScrollView, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CityList } from "@/components/world-clock/CityList";
@@ -8,14 +9,14 @@ import { GlobeSection } from "@/components/world-clock/GlobeSection";
 import { Header } from "@/components/world-clock/Header";
 import { SettingsModal } from "@/components/world-clock/SettingsModal";
 import { CURRENT_LOCATION_ID, City } from "@/constants/cities";
-import { useAppPreferences } from "@/contexts/app-preferences-context";
+import { useThemeStyle } from "@/hooks/use-theme-color";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { usePersistedCityList } from "@/hooks/use-persisted-city-list";
 import { getCurrentLocationCity, LocationError } from "@/utils/location";
 
 export default function WorldClockScreen() {
   const now = useCurrentTime();
-  const { colors } = useAppPreferences();
+  const backgroundStyle = useThemeStyle("background", "backgroundColor");
   const {
     addedCities,
     setAddedCities,
@@ -150,8 +151,9 @@ export default function WorldClockScreen() {
   }, [isLocating]);
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.root, backgroundStyle]}>
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        <Animated.View style={styles.container}>
         <Header
           onSearchPress={() => setIsSearchOpen(true)}
           onSettingsPress={() => setIsSettingsOpen(true)}
@@ -201,17 +203,23 @@ export default function WorldClockScreen() {
           onClose={() => setIsSettingsOpen(false)}
           visible={isSettingsOpen}
         />
-      </View>
-    </SafeAreaView>
+        </Animated.View>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
+    backgroundColor: "transparent",
   },
   container: {
     flex: 1,
+    backgroundColor: "transparent",
   },
   main: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { SymbolView } from "expo-symbols";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import ReanimatedSwipeable, {
   SwipeDirection,
@@ -39,38 +39,6 @@ export function SwipeableCityListItem({
   const { colors } = useAppPreferences();
   const swipeableRef = useRef<SwipeableMethods>(null);
   const actionTriggeredRef = useRef(false);
-
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        foreground: {
-          backgroundColor: colors.surface,
-        },
-        foregroundSelected: {
-          backgroundColor: colors.surfaceSelected,
-        },
-        actionContainer: {
-          width: ACTION_WIDTH,
-          height: "100%",
-        },
-        action: {
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          paddingHorizontal: Spacing.sm,
-        },
-        pinAction: {
-          backgroundColor: colors.accent,
-        },
-        removeAction: {
-          backgroundColor: "#DC2626",
-        },
-        actionDisabled: {
-          opacity: 0.45,
-        },
-      }),
-    [colors],
-  );
 
   const closeSwipeable = () => {
     swipeableRef.current?.close();
@@ -164,15 +132,35 @@ export function SwipeableCityListItem({
         mass: 0.5,
       }}
     >
-      <View style={[styles.foreground, selected && styles.foregroundSelected]}>
-        <CityListItem
-          city={city}
-          now={now}
-          onPress={onPress}
-          pinned={pinned}
-          selected={selected}
-        />
-      </View>
+      <CityListItem
+        city={city}
+        now={now}
+        onPress={onPress}
+        pinned={pinned}
+        selected={selected}
+      />
     </ReanimatedSwipeable>
   );
 }
+
+const styles = StyleSheet.create({
+  actionContainer: {
+    width: ACTION_WIDTH,
+    height: "100%",
+  },
+  action: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.sm,
+  },
+  pinAction: {
+    backgroundColor: "#3B82F6",
+  },
+  removeAction: {
+    backgroundColor: "#DC2626",
+  },
+  actionDisabled: {
+    opacity: 0.45,
+  },
+});
