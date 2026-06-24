@@ -1,7 +1,10 @@
 import { SymbolView } from "expo-symbols";
 import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Swipeable from "react-native-gesture-handler/Swipeable";
+import ReanimatedSwipeable, {
+  SwipeDirection,
+  type SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
 
 import { City } from "@/constants/cities";
 import { Colors, Spacing } from "@/constants/theme";
@@ -34,7 +37,7 @@ export function SwipeableCityListItem({
   onRemove,
   variant = "dark",
 }: SwipeableCityListItemProps) {
-  const swipeableRef = useRef<Swipeable>(null);
+  const swipeableRef = useRef<SwipeableMethods>(null);
   const actionTriggeredRef = useRef(false);
 
   const closeSwipeable = () => {
@@ -55,14 +58,12 @@ export function SwipeableCityListItem({
     onRemove?.();
   };
 
-  const handleSwipeableWillOpen = (direction: "left" | "right") => {
-    // Fires as soon as the row decides to open (i.e. after release past threshold),
-    // which feels instant compared to waiting for onSwipeableOpen.
+  const handleSwipeableWillOpen = (direction: SwipeDirection) => {
     if (actionTriggeredRef.current) return;
     actionTriggeredRef.current = true;
 
-    if (direction === "left") handlePin();
-    if (direction === "right") handleRemove();
+    if (direction === SwipeDirection.RIGHT) handlePin();
+    if (direction === SwipeDirection.LEFT) handleRemove();
   };
 
   const handleSwipeableClose = () => {
@@ -114,17 +115,22 @@ export function SwipeableCityListItem({
   );
 
   return (
-    <Swipeable
+    <ReanimatedSwipeable
       ref={swipeableRef}
       friction={1}
       leftThreshold={ACTION_WIDTH}
-      onSwipeableWillOpen={handleSwipeableWillOpen}
       onSwipeableClose={handleSwipeableClose}
+      onSwipeableWillOpen={handleSwipeableWillOpen}
       overshootLeft={false}
       overshootRight={false}
       renderLeftActions={renderLeftActions}
       renderRightActions={renderRightActions}
       rightThreshold={ACTION_WIDTH}
+      animationOptions={{
+        stiffness: 900,
+        damping: 120,
+        mass: 0.5,
+      }}
     >
       <View style={[styles.foreground, selected && styles.foregroundSelected]}>
         <CityListItem
@@ -136,7 +142,7 @@ export function SwipeableCityListItem({
           variant={variant}
         />
       </View>
-    </Swipeable>
+    </ReanimatedSwipeable>
   );
 }
 
