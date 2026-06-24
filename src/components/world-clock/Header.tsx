@@ -1,27 +1,47 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 
 type HeaderProps = {
+  onSettingsPress?: () => void;
   onSearchPress?: () => void;
 };
 
-export function Header({ onSearchPress }: HeaderProps) {
+export function Header({ onSettingsPress, onSearchPress }: HeaderProps) {
+  const { colors } = useAppPreferences();
+  const lineColor = colors.text;
+
   return (
     <View style={styles.container}>
-      <View style={styles.sideSlot} />
+      <Pressable
+        accessibilityLabel="Open settings"
+        hitSlop={12}
+        onPress={onSettingsPress}
+        style={styles.iconButton}
+      >
+        <View style={styles.menuIcon}>
+          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
+          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
+          <View style={[styles.menuLine, { backgroundColor: lineColor }]} />
+        </View>
+      </Pressable>
 
-      <Text style={styles.title}>World Clock</Text>
+      <Text style={[styles.title, { color: colors.text }]}>World Clock</Text>
 
       <Pressable
         accessibilityLabel="Search cities"
         hitSlop={12}
         onPress={onSearchPress}
-        style={styles.sideSlot}
+        style={styles.iconButton}
       >
         <View style={styles.searchIcon}>
-          <View style={styles.searchCircle} />
-          <View style={styles.searchHandle} />
+          <View
+            style={[styles.searchCircle, { borderColor: lineColor }]}
+          />
+          <View
+            style={[styles.searchHandle, { backgroundColor: lineColor }]}
+          />
         </View>
       </Pressable>
     </View>
@@ -36,7 +56,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
-  sideSlot: {
+  iconButton: {
     width: 40,
     height: 40,
     alignItems: "center",
@@ -44,11 +64,18 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: Colors.text,
     fontSize: 18,
     fontWeight: "600",
     letterSpacing: 0.2,
     textAlign: "center",
+  },
+  menuIcon: {
+    gap: 5,
+    width: 20,
+  },
+  menuLine: {
+    height: 2,
+    borderRadius: 1,
   },
   searchIcon: {
     width: 20,
@@ -60,7 +87,6 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: Colors.text,
     position: "absolute",
     top: 0,
     left: 0,
@@ -69,7 +95,6 @@ const styles = StyleSheet.create({
     width: 7,
     height: 2,
     borderRadius: 1,
-    backgroundColor: Colors.text,
     position: "absolute",
     bottom: 2,
     right: 0,

@@ -16,7 +16,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { City } from "@/constants/cities";
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 
 import { CITY_LIST_ITEM_HEIGHT } from "./CityListItem";
 import { SwipeableCityListItem } from "./SwipeableCityListItem";
@@ -122,6 +123,71 @@ export function CityList({
   onSearchPress,
   onExpandedChange,
 }: CityListProps) {
+  const { colors } = useAppPreferences();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        sheet: {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: colors.surfaceElevated,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          borderWidth: 1,
+          borderBottomWidth: 0,
+          borderColor: colors.border,
+          overflow: "hidden",
+        },
+        container: {
+          backgroundColor: colors.surfaceElevated,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          borderWidth: 1,
+          borderBottomWidth: 0,
+          borderColor: colors.border,
+          overflow: "hidden",
+        },
+        handle: {
+          height: HANDLE_HEIGHT,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        handlePill: {
+          width: 40,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: colors.textSecondary,
+        },
+        list: {
+          flex: 1,
+        },
+        separator: {
+          height: SEPARATOR_HEIGHT,
+          backgroundColor: colors.border,
+          marginHorizontal: Spacing.md,
+        },
+        emptyState: {
+          alignItems: "center",
+          paddingVertical: Spacing.xl,
+          paddingHorizontal: Spacing.md,
+          gap: Spacing.xs,
+        },
+        emptyTitle: {
+          color: colors.text,
+          fontSize: 15,
+          fontWeight: "600",
+        },
+        emptyHint: {
+          color: colors.textSecondary,
+          fontSize: 14,
+        },
+      }),
+    [colors],
+  );
+
   const [expanded, setExpanded] = useState(false);
 
   const orderedCities = useMemo(
@@ -486,62 +552,3 @@ export function CityList({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.surfaceElevated,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  container: {
-    backgroundColor: Colors.surfaceElevated,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  handle: {
-    height: HANDLE_HEIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  handlePill: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.textSecondary,
-  },
-  list: {
-    flex: 1,
-  },
-  separator: {
-    height: SEPARATOR_HEIGHT,
-    backgroundColor: Colors.border,
-    marginHorizontal: Spacing.md,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.xs,
-  },
-  emptyTitle: {
-    color: Colors.text,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  emptyHint: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-});

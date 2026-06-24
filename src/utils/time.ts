@@ -1,18 +1,36 @@
-export function formatTime(date: Date, timezone: string): string {
+import type { DateFormat, TimeFormat } from "@/constants/preferences";
+
+const DATE_FORMAT_OPTIONS: Record<
+  DateFormat,
+  Intl.DateTimeFormatOptions
+> = {
+  long: { month: "long", day: "numeric", year: "numeric" },
+  medium: { month: "short", day: "numeric", year: "numeric" },
+  short: { month: "numeric", day: "numeric", year: "2-digit" },
+  numeric: { month: "2-digit", day: "2-digit", year: "numeric" },
+};
+
+export function formatTime(
+  date: Date,
+  timezone: string,
+  timeFormat: TimeFormat = "12h",
+): string {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
+    hour12: timeFormat === "12h",
   }).format(date);
 }
 
-export function formatDate(date: Date, timezone: string): string {
+export function formatDate(
+  date: Date,
+  timezone: string,
+  dateFormat: DateFormat = "long",
+): string {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+    ...DATE_FORMAT_OPTIONS[dateFormat],
   }).format(date);
 }
 

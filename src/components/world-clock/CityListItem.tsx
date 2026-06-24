@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { City } from "@/constants/cities";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 import { formatTime, getClockAngles, getTimezoneLabel, isDaytime } from "@/utils/time";
 
 import { AnalogClock } from "./AnalogClock";
@@ -23,8 +25,66 @@ export function CityListItem({
   pinned = false,
   onPress,
 }: CityListItemProps) {
+  const { colors, preferences } = useAppPreferences();
   const { hourAngle, minuteAngle, secondAngle } = getClockAngles(now, city.timezone);
   const daytime = isDaytime(now, city.timezone);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        row: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: Spacing.md,
+          paddingHorizontal: Spacing.md,
+          gap: Spacing.md,
+          backgroundColor: colors.surface,
+        },
+        rowSelected: {
+          backgroundColor: colors.surfaceSelected,
+        },
+        details: {
+          flex: 1,
+          gap: 2,
+        },
+        titleRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: Spacing.sm,
+          flexWrap: "wrap",
+        },
+        cityName: {
+          color: colors.text,
+          fontSize: 15,
+          fontWeight: "600",
+        },
+        pinBadge: {
+          color: colors.accent,
+          fontSize: 11,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.4,
+        },
+        timezone: {
+          color: colors.textSecondary,
+          fontSize: 13,
+        },
+        digitalTime: {
+          color: colors.text,
+          fontSize: 16,
+          fontWeight: "700",
+          minWidth: 72,
+          textAlign: "right",
+        },
+        chevron: {
+          color: colors.textSecondary,
+          fontSize: 22,
+          fontWeight: "300",
+          marginLeft: -4,
+        },
+      }),
+    [colors],
+  );
 
   return (
     <Pressable
@@ -48,62 +108,11 @@ export function CityListItem({
         <Text style={styles.timezone}>{getTimezoneLabel(now, city.timezone)}</Text>
       </View>
 
-      <Text style={styles.digitalTime}>{formatTime(now, city.timezone)}</Text>
+      <Text style={styles.digitalTime}>
+        {formatTime(now, city.timezone, preferences.timeFormat)}
+      </Text>
 
       <Text style={styles.chevron}>›</Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.md,
-    backgroundColor: Colors.surface,
-  },
-  rowSelected: {
-    backgroundColor: Colors.surfaceSelected,
-  },
-  details: {
-    flex: 1,
-    gap: 2,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    flexWrap: "wrap",
-  },
-  cityName: {
-    color: Colors.text,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  pinBadge: {
-    color: Colors.accent,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  timezone: {
-    color: Colors.textSecondary,
-    fontSize: 13,
-  },
-  digitalTime: {
-    color: Colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-    minWidth: 72,
-    textAlign: "right",
-  },
-  chevron: {
-    color: Colors.textSecondary,
-    fontSize: 22,
-    fontWeight: "300",
-    marginLeft: -4,
-  },
-});

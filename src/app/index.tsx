@@ -6,14 +6,16 @@ import { CityList } from "@/components/world-clock/CityList";
 import { CitySearchModal } from "@/components/world-clock/CitySearchModal";
 import { GlobeSection } from "@/components/world-clock/GlobeSection";
 import { Header } from "@/components/world-clock/Header";
+import { SettingsModal } from "@/components/world-clock/SettingsModal";
 import { CURRENT_LOCATION_ID, City } from "@/constants/cities";
-import { Colors } from "@/constants/theme";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { usePersistedCityList } from "@/hooks/use-persisted-city-list";
 import { getCurrentLocationCity, LocationError } from "@/utils/location";
 
 export default function WorldClockScreen() {
   const now = useCurrentTime();
+  const { colors } = useAppPreferences();
   const {
     addedCities,
     setAddedCities,
@@ -26,6 +28,7 @@ export default function WorldClockScreen() {
   } = usePersistedCityList();
   const [isLocating, setIsLocating] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isListExpanded, setIsListExpanded] = useState(false);
   const [mainHeight, setMainHeight] = useState(0);
 
@@ -147,9 +150,12 @@ export default function WorldClockScreen() {
   }, [isLocating]);
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-      <View style={styles.container}>
-        <Header onSearchPress={() => setIsSearchOpen(true)} />
+    <SafeAreaView edges={["top", "bottom"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Header
+          onSearchPress={() => setIsSearchOpen(true)}
+          onSettingsPress={() => setIsSettingsOpen(true)}
+        />
 
         <View onLayout={handleMainLayout} style={styles.main}>
           <ScrollView
@@ -190,6 +196,11 @@ export default function WorldClockScreen() {
           onSelectCity={handleSearchSelect}
           visible={isSearchOpen}
         />
+
+        <SettingsModal
+          onClose={() => setIsSettingsOpen(false)}
+          visible={isSettingsOpen}
+        />
       </View>
     </SafeAreaView>
   );
@@ -198,11 +209,9 @@ export default function WorldClockScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   main: {
     flex: 1,

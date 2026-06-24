@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,7 +12,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { City } from "@/constants/cities";
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 import {
   GeocodingError,
   MIN_QUERY_LENGTH,
@@ -43,6 +44,7 @@ export function CitySearchModal({
   onSelectCity,
 }: CitySearchModalProps) {
   const insets = useSafeAreaInsets();
+  const { colors, preferences } = useAppPreferences();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<City[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -105,6 +107,128 @@ export function CitySearchModal({
   const emptyMessage = getEmptyMessage(query, isSearching, error);
   const showEmptyState = !isSearching && results.length === 0 && emptyMessage;
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: colors.background,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: Spacing.md,
+          marginBottom: Spacing.md,
+        },
+        title: {
+          color: colors.text,
+          fontSize: 20,
+          fontWeight: "600",
+        },
+        closeButton: {
+          paddingVertical: Spacing.xs,
+          paddingHorizontal: Spacing.sm,
+        },
+        closeLabel: {
+          color: colors.accent,
+          fontSize: 16,
+          fontWeight: "500",
+        },
+        searchField: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: Spacing.sm,
+          marginHorizontal: Spacing.md,
+          marginBottom: Spacing.md,
+          paddingHorizontal: Spacing.md,
+          paddingVertical: Spacing.sm,
+          borderRadius: 12,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        searchIcon: {
+          width: 18,
+          height: 18,
+          position: "relative",
+        },
+        searchCircle: {
+          width: 12,
+          height: 12,
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: colors.textSecondary,
+          position: "absolute",
+          top: 0,
+          left: 0,
+        },
+        searchHandle: {
+          width: 6,
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: colors.textSecondary,
+          position: "absolute",
+          bottom: 1,
+          right: 0,
+          transform: [{ rotate: "45deg" }],
+        },
+        input: {
+          flex: 1,
+          color: colors.text,
+          fontSize: 16,
+          paddingVertical: Spacing.xs,
+        },
+        list: {
+          flex: 1,
+        },
+        resultRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: Spacing.md,
+          paddingVertical: Spacing.md,
+          gap: Spacing.md,
+        },
+        resultRowPressed: {
+          backgroundColor: colors.accentMuted,
+        },
+        resultDetails: {
+          flex: 1,
+          gap: 2,
+        },
+        resultCity: {
+          color: colors.text,
+          fontSize: 16,
+          fontWeight: "600",
+        },
+        resultTimezone: {
+          color: colors.textSecondary,
+          fontSize: 13,
+        },
+        resultTime: {
+          color: colors.text,
+          fontSize: 16,
+          fontWeight: "700",
+        },
+        separator: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: colors.border,
+          marginHorizontal: Spacing.md,
+        },
+        emptyText: {
+          color: colors.textSecondary,
+          fontSize: 15,
+          textAlign: "center",
+          marginTop: Spacing.xl,
+          paddingHorizontal: Spacing.lg,
+        },
+        errorText: {
+          color: "#F87171",
+        },
+      }),
+    [colors],
+  );
+
   return (
     <Modal
       animationType="slide"
@@ -137,13 +261,13 @@ export function CitySearchModal({
             clearButtonMode="while-editing"
             onChangeText={setQuery}
             placeholder="Search any city"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             returnKeyType="search"
             style={styles.input}
             value={query}
           />
           {isSearching ? (
-            <ActivityIndicator color={Colors.accent} size="small" />
+            <ActivityIndicator color={colors.accent} size="small" />
           ) : null}
         </View>
 
@@ -182,7 +306,9 @@ export function CitySearchModal({
                     : getTimezoneLabel(now, item.timezone)}
                 </Text>
               </View>
-              <Text style={styles.resultTime}>{formatTime(now, item.timezone)}</Text>
+              <Text style={styles.resultTime}>
+                {formatTime(now, item.timezone, preferences.timeFormat)}
+              </Text>
             </Pressable>
           )}
           style={styles.list}
@@ -191,121 +317,3 @@ export function CitySearchModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  title: {
-    color: Colors.text,
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  closeButton: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-  },
-  closeLabel: {
-    color: Colors.accent,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  searchField: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  searchIcon: {
-    width: 18,
-    height: 18,
-    position: "relative",
-  },
-  searchCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: Colors.textSecondary,
-    position: "absolute",
-    top: 0,
-    left: 0,
-  },
-  searchHandle: {
-    width: 6,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: Colors.textSecondary,
-    position: "absolute",
-    bottom: 1,
-    right: 0,
-    transform: [{ rotate: "45deg" }],
-  },
-  input: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 16,
-    paddingVertical: Spacing.xs,
-  },
-  list: {
-    flex: 1,
-  },
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    gap: Spacing.md,
-  },
-  resultRowPressed: {
-    backgroundColor: Colors.accentMuted,
-  },
-  resultDetails: {
-    flex: 1,
-    gap: 2,
-  },
-  resultCity: {
-    color: Colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resultTimezone: {
-    color: Colors.textSecondary,
-    fontSize: 13,
-  },
-  resultTime: {
-    color: Colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
-    marginHorizontal: Spacing.md,
-  },
-  emptyText: {
-    color: Colors.textSecondary,
-    fontSize: 15,
-    textAlign: "center",
-    marginTop: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-  },
-  errorText: {
-    color: "#F87171",
-  },
-});

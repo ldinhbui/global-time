@@ -1,5 +1,5 @@
 import { SymbolView } from "expo-symbols";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import ReanimatedSwipeable, {
   SwipeDirection,
@@ -7,7 +7,8 @@ import ReanimatedSwipeable, {
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 
 import { City } from "@/constants/cities";
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useAppPreferences } from "@/contexts/app-preferences-context";
 
 import { CityListItem } from "./CityListItem";
 
@@ -23,7 +24,6 @@ type SwipeableCityListItemProps = {
   onPress?: () => void;
   onPin?: () => void;
   onRemove?: () => void;
-  variant?: "dark" | "light";
 };
 
 export function SwipeableCityListItem({
@@ -35,10 +35,42 @@ export function SwipeableCityListItem({
   onPress,
   onPin,
   onRemove,
-  variant = "dark",
 }: SwipeableCityListItemProps) {
+  const { colors } = useAppPreferences();
   const swipeableRef = useRef<SwipeableMethods>(null);
   const actionTriggeredRef = useRef(false);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        foreground: {
+          backgroundColor: colors.surface,
+        },
+        foregroundSelected: {
+          backgroundColor: colors.surfaceSelected,
+        },
+        actionContainer: {
+          width: ACTION_WIDTH,
+          height: "100%",
+        },
+        action: {
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: Spacing.sm,
+        },
+        pinAction: {
+          backgroundColor: colors.accent,
+        },
+        removeAction: {
+          backgroundColor: "#DC2626",
+        },
+        actionDisabled: {
+          opacity: 0.45,
+        },
+      }),
+    [colors],
+  );
 
   const closeSwipeable = () => {
     swipeableRef.current?.close();
@@ -84,7 +116,7 @@ export function SwipeableCityListItem({
             web: "push_pin",
           }}
           size={ACTION_ICON_SIZE}
-          tintColor={Colors.text}
+          tintColor={colors.text}
         />
       </Pressable>
     </View>
@@ -108,7 +140,7 @@ export function SwipeableCityListItem({
             web: "delete",
           }}
           size={ACTION_ICON_SIZE}
-          tintColor={Colors.text}
+          tintColor={colors.text}
         />
       </Pressable>
     </View>
@@ -139,37 +171,8 @@ export function SwipeableCityListItem({
           onPress={onPress}
           pinned={pinned}
           selected={selected}
-          variant={variant}
         />
       </View>
     </ReanimatedSwipeable>
   );
 }
-
-const styles = StyleSheet.create({
-  foreground: {
-    backgroundColor: Colors.surface,
-  },
-  foregroundSelected: {
-    backgroundColor: Colors.surfaceSelected,
-  },
-  actionContainer: {
-    width: ACTION_WIDTH,
-    height: "100%",
-  },
-  action: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.sm,
-  },
-  pinAction: {
-    backgroundColor: Colors.accent,
-  },
-  removeAction: {
-    backgroundColor: "#DC2626",
-  },
-  actionDisabled: {
-    opacity: 0.45,
-  },
-});
